@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TV Queue Board | Shah's Salon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="tv-body">
+
+  <!-- TV Header -->
+  <header class="tv-header">
+    <div class="brand">
+      <div class="brand-logo" style="background-color: var(--color-electric); color: var(--color-navy-900);">S</div>
+      <div class="brand-name" style="color: var(--color-white);">Shah's<span style="color: var(--color-electric);"> Salon</span> TV</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <!-- Sound Enable Request -->
+      <button id="enable-audio-btn" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: var(--color-white);">
+        <svg class="icon" viewBox="0 0 24 24" style="margin-right: 4px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        Enable Sound Announcements
+      </button>
+      <!-- Fullscreen Toggle -->
+      <button id="fullscreen-btn" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: var(--color-white);">
+        <svg class="icon" viewBox="0 0 24 24" style="margin-right: 4px;"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+        Fullscreen
+      </button>
+      <div class="tv-time" id="tv-clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Autoplay Timeline (Short-video progress bar) -->
+  <div class="tv-progress-timeline">
+    <div class="tv-progress-bar" id="tv-progress-bar"></div>
+  </div>
+
+  <!-- TV Slideshow Container -->
+  <main class="tv-container">
+    <div class="slideshow-viewport" id="slideshow-viewport">
+      <!-- Slides will be injected here dynamically -->
+      <div class="tv-empty-state" id="tv-empty-state">
+        <div class="tv-empty-icon">✂</div>
+        <div class="tv-empty-text">Welcome to Shah's Salon</div>
+        <div class="tv-empty-subtext">No active bookings at the moment. Walk-ins are welcome!</div>
+      </div>
+    </div>
+
+    <!-- Vertical Dots Indicator -->
+    <div class="slide-indicators-vertical" id="slide-indicators">
+      <!-- Dots will be injected here dynamically -->
+    </div>
+  </main>
+
+  <!-- Announcement Overlay (Triggers on Calling Client) -->
+  <div class="announcement-overlay" id="announcement-overlay">
+    <div class="announcement-border">
+      <div class="announcement-title">NOW SERVING</div>
+      <div class="announcement-name" id="announce-name">JOHN DOE</div>
+      <div class="announcement-subtext">Please proceed to</div>
+      <div class="announcement-barber" id="announce-barber">Alex (Chair 1)</div>
+    </div>
+  </div>
+
+  <script>
+    let bookings = [];
+    let activeSlides = [];
+    let currentSlideIndex = -1;
+    let slideTimer = null;
+    let progressTimer = null;
+    let progressPct = 0;
+    const SLIDE_DURATION = 10000; // 10 seconds per slide
+    const PROGRESS_INTERVAL = 100; // updates every 100ms
+    let audioContextEnabled = false;
+
+    // Web Audio Synthesizer for Announcements chime
+    function playChime() {
+      if (!audioContextEnabled) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const ctx = new AudioContext();
+        
+        // Classic pleasant barber chime: 2 notes (E5, A5)
+        const notes = [659.25, 880.00]; // frequencies
+        const times = [0, 0.25];
+        
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + times[idx]);
+          
+          gainNode.gain.setValueAtTime(0, ctx.currentTime + times[idx]);
+          gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + times[idx] + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + times[idx] + 0.6);
+          
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          osc.start(ctx.currentTime + times[idx]);
+          osc.stop(ctx.currentTime + times[idx] + 0.7);
+        });
+      } catch (e) {
+        console.error('Audio synthesis failed:', e);
+      }
+    }
+
+    // Audio text to speech announcement
+    function speakAnnouncement(name, barber) {
+      if (!audioContextEnabled) return;
+      setTimeout(() => {
+        try {
+          const speech = new SpeechSynthesisUtterance();
+          speech.text = `Now serving ${name}. Please proceed to ${barber.split(' (')[0]}.`;
+          speech.rate = 0.9;
+          speech.pitch = 1.0;
+          window.speechSynthesis.speak(speech);
+        } catch (e) {
+          console.error('Text to speech failed:', e);
+        }
+      }, 800); // speak shortly after the chime
+    }
+
+    // Enable audio context on button click
+    const enableAudioBtn = document.getElementById('enable-audio-btn');
+    enableAudioBtn.addEventListener('click', () => {
+      audioContextEnabled = true;
+      enableAudioBtn.style.display = 'none';
+      // play a soft success note
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    });
+
+    // Fullscreen toggle logic
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.error(`Error enabling fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    // Clock display helper
+    function updateClock() {
+      const clock = document.getElementById('tv-clock');
+      const now = new Date();
+      clock.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Set up WebSocket connection
+    let ws;
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('Connected to WebSocket server');
+      };
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'SYNC_BOOKINGS' || message.type === 'UPDATE_BOOKINGS') {
+          bookings = message.data;
+          updateQueueSlides();
+        } else if (message.type === 'CALL_CLIENT') {
+          triggerCallAnnouncement(message.data);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected. Reconnecting in 5s...');
+        setTimeout(connectWebSocket, 5000);
+      };
+    }
+    connectWebSocket();
+
+    // Prepare slides from active & waiting bookings
+    function updateQueueSlides() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      // Filter for today's active or waiting bookings
+      const todayBookings = bookings.filter(b => 
+        b.date === todayStr && (b.status === 'serving' || b.status === 'waiting')
+      );
+
+      // Sort: 'serving' first, then 'waiting' sorted by time
+      todayBookings.sort((a, b) => {
+        if (a.status === 'serving' && b.status !== 'serving') return -1;
+        if (a.status !== 'serving' && b.status === 'serving') return 1;
+        return a.time.localeCompare(b.time);
+      });
+
+      activeSlides = todayBookings;
+      renderSlideshow();
+    }
+
+    // Render slides inside viewport
+    function renderSlideshow() {
+      const viewport = document.getElementById('slideshow-viewport');
+      const indicators = document.getElementById('slide-indicators');
+      
+      // Reset
+      clearInterval(slideTimer);
+      clearInterval(progressTimer);
+      document.getElementById('tv-progress-bar').style.width = '0%';
+
+      if (activeSlides.length === 0) {
+        viewport.innerHTML = `
+          <div class="tv-empty-state">
+            <div class="tv-empty-icon">✂</div>
+            <div class="tv-empty-text">Welcome to Shah's Salon</div>
+            <div class="tv-empty-subtext">No active bookings at the moment. Walk-ins are welcome!</div>
+          </div>
+        `;
+        indicators.innerHTML = '';
+        currentSlideIndex = -1;
+        return;
+      }
+
+      // Render slides
+      let slidesHtml = '';
+      let indicatorsHtml = '';
+
+      activeSlides.forEach((booking, idx) => {
+        const isServing = booking.status === 'serving';
+        const slideCat = isServing ? 'NOW SERVING' : 'UPCOMING APPOINTMENT';
+        const statusBadge = isServing ? `<div class="badge-serving-tv">ACTIVE</div>` : '';
+        
+        slidesHtml += `
+          <div class="slide" id="slide-${idx}">
+            <div class="slide-category">${slideCat}</div>
+            <div class="slide-client-name">${booking.name}</div>
+            <div class="slide-details-grid">
+              <div class="detail-block">
+                <div class="detail-label">Service</div>
+                <div class="detail-value">${booking.service}</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Barber / Chair</div>
+                <div class="detail-value">${booking.barber}</div>
+              </div>
+              <div class="detail-block">
+                <div class="detail-label">Scheduled Time</div>
+                <div class="detail-value">${booking.time}</div>
+                ${statusBadge}
+              </div>
+            </div>
+          </div>
+        `;
+
+        indicatorsHtml += `<div class="indicator-dot" id="dot-${idx}"></div>`;
+      });
+
+      viewport.innerHTML = slidesHtml;
+      indicators.innerHTML = indicatorsHtml;
+
+      // Start slideshow
+      currentSlideIndex = 0;
+      showSlide(currentSlideIndex);
+    }
+
+    // Show slide by index with animations
+    function showSlide(index) {
+      if (activeSlides.length === 0) return;
+
+      // Reset styles and timers
+      clearInterval(slideTimer);
+      clearInterval(progressTimer);
+      progressPct = 0;
+      document.getElementById('tv-progress-bar').style.width = '0%';
+
+      const slides = document.querySelectorAll('.slide');
+      const dots = document.querySelectorAll('.indicator-dot');
+
+      slides.forEach((slide, idx) => {
+        if (idx === index) {
+          slide.className = 'slide active';
+        } else if (slide.classList.contains('active')) {
+          slide.className = 'slide exit';
+          // clean exit slide after animation
+          setTimeout(() => {
+            if (slide.className === 'slide exit') slide.className = 'slide';
+          }, 600);
+        } else {
+          slide.className = 'slide';
+        }
+      });
+
+      dots.forEach((dot, idx) => {
+        dot.className = idx === index ? 'indicator-dot active' : 'indicator-dot';
+      });
+
+      // If only one slide, don't auto-progress but show full bar
+      if (activeSlides.length === 1) {
+        document.getElementById('tv-progress-bar').style.width = '100%';
+        return;
+      }
+
+      // Start timers
+      startProgress();
+      
+      slideTimer = setTimeout(() => {
+        currentSlideIndex = (currentSlideIndex + 1) % activeSlides.length;
+        showSlide(currentSlideIndex);
+      }, SLIDE_DURATION);
+    }
+
+    // Animate timeline progress bar
+    function startProgress() {
+      const progressBar = document.getElementById('tv-progress-bar');
+      const increment = (PROGRESS_INTERVAL / SLIDE_DURATION) * 100;
+      
+      progressTimer = setInterval(() => {
+        progressPct += increment;
+        if (progressPct >= 100) {
+          progressPct = 100;
+          clearInterval(progressTimer);
+        }
+        progressBar.style.width = `${progressPct}%`;
+      }, PROGRESS_INTERVAL);
+    }
+
+    // Trigger full screen flash announcement
+    function triggerCallAnnouncement(data) {
+      const overlay = document.getElementById('announcement-overlay');
+      const name = document.getElementById('announce-name');
+      const barber = document.getElementById('announce-barber');
+
+      // Populate data
+      name.textContent = data.name;
+      barber.textContent = data.barber;
+
+      // Pause slide progression
+      clearInterval(slideTimer);
+      clearInterval(progressTimer);
+
+      // Play sound and TTS
+      playChime();
+      speakAnnouncement(data.name, data.barber);
+
+      // Activate overlay
+      overlay.classList.add('active');
+
+      // Dismiss after 7 seconds
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        // Resume slideshow from current index
+        if (currentSlideIndex !== -1) {
+          showSlide(currentSlideIndex);
+        }
+      }, 7000);
+    }
+  </script>
+</body>
+</html>

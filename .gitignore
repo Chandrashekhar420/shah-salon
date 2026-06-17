@@ -1,0 +1,9 @@
+node_modules/
+database_content.json
+database.sqlite
+view_database.js
+.system_generated/
+.gemini/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

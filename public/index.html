@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Haircut Appointment | Shah's Salon</title>
+  <meta name="description" content="Book your premium haircut appointment with our skilled barbers. Simple, elegant, and convenient booking.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <a href="index.html" class="brand" id="brand-link">
+      <div class="brand-logo">S</div>
+      <div class="brand-name">Shah's<span> Salon</span></div>
+    </a>
+    <nav class="nav-links">
+      <a href="index.html" class="nav-link active" id="nav-book">Book</a>
+      <a href="tv.html" class="nav-link" id="nav-tv">TV Board</a>
+      <a href="admin.html" class="nav-link" id="nav-admin">Admin</a>
+      <a href="#" class="nav-link" id="nav-profile">My Profile</a>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <div style="max-width: 650px; margin: 0 auto;">
+      <div class="card">
+        <div style="margin-bottom: 2rem; text-align: center;">
+          <h1 style="font-size: 2.25rem; margin-bottom: 0.5rem; color: var(--color-navy-900);">Book An Appointment</h1>
+          <p style="color: var(--color-blue-600); font-weight: 500;">Select your service, barber, and preferred time below</p>
+        </div>
+
+        <form id="booking-form">
+          <!-- Full Name -->
+          <div class="form-group">
+            <label for="client-name" class="form-label">Full Name</label>
+            <input type="text" id="client-name" class="form-control" placeholder="e.g. John Doe" required autocomplete="name">
+          </div>
+
+          <!-- Phone Number -->
+          <div class="form-group">
+            <label for="client-phone" class="form-label">Phone Number</label>
+            <input type="tel" id="client-phone" class="form-control" placeholder="e.g. (555) 019-2834" required autocomplete="tel">
+          </div>
+
+          <div class="form-row">
+            <!-- Service Selection -->
+            <div class="form-group">
+              <label for="service-select" class="form-label">Service</label>
+              <select id="service-select" class="form-control" required>
+                <option value="" disabled selected>Select service</option>
+                <option value="Classic Haircut">Classic Haircut</option>
+                <option value="Beard Trim & Groom">Beard Trim & Groom</option>
+                <option value="Haircut & Beard Combo">Haircut & Beard Combo</option>
+                <option value="Signature Hair Styling">Signature Hair Styling</option>
+              </select>
+            </div>
+
+            <!-- Barber Selection -->
+            <div class="form-group">
+              <label for="barber-select" class="form-label">Barber</label>
+              <select id="barber-select" class="form-control" required>
+                <option value="" disabled selected>Choose a barber</option>
+                <option value="Alex (Chair 1)">Alex (Chair 1)</option>
+                <option value="Chris (Chair 2)">Chris (Chair 2)</option>
+                <option value="Sam (Chair 3)">Sam (Chair 3)</option>
+                <option value="Taylor (Chair 4)">Taylor (Chair 4)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Date Selection -->
+            <div class="form-group">
+              <label for="booking-date" class="form-label">Date</label>
+              <input type="date" id="booking-date" class="form-control" required>
+            </div>
+
+            <!-- Time Selection -->
+            <div class="form-group">
+              <label for="booking-time" class="form-label">Preferred Time</label>
+              <select id="booking-time" class="form-control" required>
+                <option value="" disabled selected>Select time</option>
+                <option value="09:00 AM">09:00 AM</option>
+                <option value="09:30 AM">09:30 AM</option>
+                <option value="10:00 AM">10:00 AM</option>
+                <option value="10:30 AM">10:30 AM</option>
+                <option value="11:00 AM">11:00 AM</option>
+                <option value="11:30 AM">11:30 AM</option>
+                <option value="12:00 PM">12:00 PM</option>
+                <option value="12:30 PM">12:30 PM</option>
+                <option value="01:00 PM">01:00 PM</option>
+                <option value="01:30 PM">01:30 PM</option>
+                <option value="02:00 PM">02:00 PM</option>
+                <option value="02:30 PM">02:30 PM</option>
+                <option value="03:00 PM">03:00 PM</option>
+                <option value="03:30 PM">03:30 PM</option>
+                <option value="04:00 PM">04:00 PM</option>
+                <option value="04:30 PM">04:30 PM</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" id="btn-submit-booking">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            Confirm Booking
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Success Toast -->
+  <div class="toast-success" id="success-toast">
+    <svg class="icon" viewBox="0 0 24 24" style="stroke: var(--color-white);"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span>Appointment Booked Successfully!</span>
+  </div>
+
+  <!-- Profile & Payments Modal -->
+  <div class="modal-backdrop" id="profile-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title-text">My Profile & Payments</h2>
+        <button class="modal-close-btn" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Section 1: Phone Lookup -->
+        <div id="lookup-section" class="lookup-container">
+          <div class="lookup-icon">👤</div>
+          <h3 style="font-size: 1.25rem;">Access Your Profile</h3>
+          <p style="color: var(--color-blue-600); font-size: 0.9rem;">Enter your phone number to check your haircut history and manage payment methods.</p>
+          
+          <div class="form-group" style="text-align: left; margin-top: 1rem;">
+            <label for="lookup-phone" class="form-label">Phone Number</label>
+            <input type="tel" id="lookup-phone" class="form-control" placeholder="e.g. (555) 019-2834" required autocomplete="tel">
+          </div>
+          
+          <button id="btn-submit-lookup" class="btn btn-primary" style="width: 100%;">Access Profile</button>
+        </div>
+
+        <!-- Section 2: Dashboard (Initially hidden) -->
+        <div id="dashboard-section" style="display: none;">
+          <div class="user-profile-summary">
+            <div>
+              <div class="user-profile-name" id="profile-user-name">John Doe</div>
+              <div class="user-profile-phone" id="profile-user-phone">(555) 019-2834</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-profile-logout">Logout</button>
+          </div>
+
+          <!-- Tabs -->
+          <div class="modal-tabs">
+            <div class="modal-tab active" id="tab-history">Booking History</div>
+            <div class="modal-tab" id="tab-payments">Payment Methods</div>
+          </div>
+
+          <!-- Tab 1 content: History -->
+          <div id="tab-content-history" class="history-list">
+            <!-- Will be dynamically populated -->
+          </div>
+
+          <!-- Tab 2 content: Payments -->
+          <div id="tab-content-payments" class="payments-container" style="display: none;">
+            <div class="payment-card-list" id="payment-cards-list">
+              <!-- Will be dynamically populated -->
+            </div>
+
+            <!-- Add Card Form -->
+            <form id="payment-card-form" class="add-card-form">
+              <div class="form-title-sm">Add New Card</div>
+              
+              <!-- Card Display Visual Mockup -->
+              <div class="credit-card-mockup" id="mock-card-bg">
+                <div class="card-chip"></div>
+                <div class="mockup-number" id="mock-card-number">•••• •••• •••• ••••</div>
+                <div class="mockup-bottom">
+                  <div>
+                    <div style="font-size: 0.55rem; opacity: 0.8; font-weight: bold;">Card Holder</div>
+                    <div id="mock-card-name" style="font-weight: 600;">YOUR NAME</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.55rem; opacity: 0.8; font-weight: bold;">Expires</div>
+                    <div id="mock-card-expiry" style="font-weight: 600;">MM/YY</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="card-holder" class="form-label" style="font-size: 0.8rem;">Cardholder Name</label>
+                <input type="text" id="card-holder" class="form-control" style="padding: 0.6rem 0.85rem; font-size: 0.9rem;" placeholder="e.g. John Doe" required>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0.75rem;">
+                <label for="card-number" class="form-label" style="font-size: 0.8rem;">Card Number</label>
+                <input type="text" id="card-number" class="form-control" style="padding: 0.6rem 0.85rem; font-size: 0.9rem;" placeholder="e.g. 4111 2222 3333 4444" maxlength="19" required>
+              </div>
+
+              <div class="form-row" style="gap: 0.75rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="card-expiry" class="form-label" style="font-size: 0.8rem;">Expiry Date</label>
+                  <input type="text" id="card-expiry" class="form-control" style="padding: 0.6rem 0.85rem; font-size: 0.9rem;" placeholder="MM/YY" maxlength="5" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="card-cvv" class="form-label" style="font-size: 0.8rem;">CVV</label>
+                  <input type="password" id="card-cvv" class="form-control" style="padding: 0.6rem 0.85rem; font-size: 0.9rem;" placeholder="•••" maxlength="4" required>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; width: 100%;">Save Payment Method</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set default date to today and restrict past dates
+    const dateInput = document.getElementById('booking-date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+    dateInput.min = today;
+
+    // Handle form submission
+    const form = document.getElementById('booking-form');
+    const submitBtn = document.getElementById('btn-submit-booking');
+    const toast = document.getElementById('success-toast');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('client-name').value.trim();
+      const phone = document.getElementById('client-phone').value.trim();
+      const service = document.getElementById('service-select').value;
+      const barber = document.getElementById('barber-select').value;
+      const date = document.getElementById('booking-date').value;
+      const time = document.getElementById('booking-time').value;
+
+      if (!name || !phone || !service || !barber || !date || !time) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Booking...';
+
+      try {
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, phone, service, barber, date, time })
+        });
+
+        if (response.ok) {
+          form.reset();
+          // Reset default date to today
+          dateInput.value = today;
+          
+          // Show toast
+          toast.classList.add('show');
+          setTimeout(() => {
+            toast.classList.remove('show');
+          }, 3500);
+        } else {
+          const errData = await response.json();
+          alert('Error booking appointment: ' + (errData.error || 'Please try again.'));
+        }
+      } catch (err) {
+        console.error('Network error booking appointment:', err);
+        alert('Network error. Failed to connect to server.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `
+          <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Confirm Booking
+        `;
+      }
+    });
+
+    // ==========================================================================
+    // Profile Modal Logic
+    // ==========================================================================
+    const navProfile = document.getElementById('nav-profile');
+    const profileModal = document.getElementById('profile-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const lookupSection = document.getElementById('lookup-section');
+    const dashboardSection = document.getElementById('dashboard-section');
+    const btnSubmitLookup = document.getElementById('btn-submit-lookup');
+    const lookupPhoneInput = document.getElementById('lookup-phone');
+    const btnProfileLogout = document.getElementById('btn-profile-logout');
+
+    const tabHistory = document.getElementById('tab-history');
+    const tabPayments = document.getElementById('tab-payments');
+    const tabContentHistory = document.getElementById('tab-content-history');
+    const tabContentPayments = document.getElementById('tab-content-payments');
+
+    let activeUserPhone = '';
+    let activeUserProfile = null;
+
+    // Open/Close Modal
+    navProfile.addEventListener('click', (e) => {
+      e.preventDefault();
+      profileModal.classList.add('active');
+    });
+
+    btnCloseModal.addEventListener('click', () => {
+      profileModal.classList.remove('active');
+    });
+
+    profileModal.addEventListener('click', (e) => {
+      if (e.target === profileModal) {
+        profileModal.classList.remove('active');
+      }
+    });
+
+    // Access profile
+    btnSubmitLookup.addEventListener('click', async () => {
+      const phone = lookupPhoneInput.value.trim();
+      if (!phone) {
+        alert('Please enter your phone number.');
+        return;
+      }
+
+      btnSubmitLookup.disabled = true;
+      btnSubmitLookup.textContent = 'Loading...';
+
+      try {
+        const response = await fetch('/api/users/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          activeUserProfile = data.user;
+          activeUserPhone = phone;
+
+          // Populate profile UI
+          document.getElementById('profile-user-name').textContent = data.user.name;
+          document.getElementById('profile-user-phone').textContent = data.user.phone;
+
+          // Render History and Payments
+          renderHistory(data.bookings);
+          renderPayments(data.paymentMethods);
+
+          // Show Dashboard Section
+          lookupSection.style.display = 'none';
+          dashboardSection.style.display = 'block';
+          switchTab('history');
+        } else {
+          const err = await response.json();
+          alert(err.error || 'Failed to load profile.');
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        alert('Network error loading profile.');
+      } finally {
+        btnSubmitLookup.disabled = false;
+        btnSubmitLookup.textContent = 'Access Profile';
+      }
+    });
+
+    // Logout / Change Phone
+    btnProfileLogout.addEventListener('click', () => {
+      activeUserPhone = '';
+      activeUserProfile = null;
+      lookupPhoneInput.value = '';
+      
+      lookupSection.style.display = 'flex';
+      dashboardSection.style.display = 'none';
+    });
+
+    // Modal Tabs logic
+    tabHistory.addEventListener('click', () => switchTab('history'));
+    tabPayments.addEventListener('click', () => switchTab('payments'));
+
+    function switchTab(tab) {
+      if (tab === 'history') {
+        tabHistory.classList.add('active');
+        tabPayments.classList.remove('active');
+        tabContentHistory.style.display = 'flex';
+        tabContentPayments.style.display = 'none';
+      } else {
+        tabHistory.classList.remove('active');
+        tabPayments.classList.add('active');
+        tabContentHistory.style.display = 'none';
+        tabContentPayments.style.display = 'flex';
+      }
+    }
+
+    // Refresh current user data
+    async function refreshUserData() {
+      if (!activeUserPhone) return;
+      try {
+        const response = await fetch('/api/users/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: activeUserPhone })
+        });
+        if (response.ok) {
+          const data = await response.json();
+          renderHistory(data.bookings);
+          renderPayments(data.paymentMethods);
+        }
+      } catch (e) {
+        console.error('Failed to refresh data:', e);
+      }
+    }
+
+    // Render Booking History
+    function renderHistory(bookingsList) {
+      if (!bookingsList || bookingsList.length === 0) {
+        tabContentHistory.innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: var(--color-navy-800); font-style: italic;">
+            No appointments found in your history.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      bookingsList.forEach(b => {
+        let badgeClass = 'badge-waiting';
+        if (b.status === 'serving') badgeClass = 'badge-serving';
+        if (b.status === 'completed') badgeClass = 'badge-completed';
+        if (b.status === 'cancelled') badgeClass = 'badge-cancelled';
+
+        html += `
+          <div class="history-item">
+            <div class="history-details">
+              <div class="history-service">${b.service}</div>
+              <div class="history-meta">
+                <span>Barber: <strong>${b.barber}</strong></span> | 
+                <span>Time: <strong>${b.date} @ ${b.time}</strong></span>
+              </div>
+            </div>
+            <span class="badge ${badgeClass}" style="font-size: 0.7rem; padding: 0.15rem 0.6rem;">${b.status}</span>
+          </div>
+        `;
+      });
+      tabContentHistory.innerHTML = html;
+    }
+
+    // Render Saved Payments
+    function renderPayments(paymentsList) {
+      const cardsListContainer = document.getElementById('payment-cards-list');
+      
+      if (!paymentsList || paymentsList.length === 0) {
+        cardsListContainer.innerHTML = `
+          <div style="text-align: center; padding: 1rem; color: var(--color-navy-800); font-style: italic; font-size: 0.9rem;">
+            No saved payment methods. Add one below!
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      paymentsList.forEach(card => {
+        // Gradient theme based on card type
+        let cardBg = 'linear-gradient(135deg, var(--color-blue-600), var(--color-navy-900))';
+        if (card.cardType === 'Mastercard') {
+          cardBg = 'linear-gradient(135deg, #e65100, var(--color-navy-900))';
+        } else if (card.cardType === 'American Express') {
+          cardBg = 'linear-gradient(135deg, #006064, var(--color-navy-900))';
+        }
+
+        html += `
+          <div class="saved-card" style="background: ${cardBg}">
+            <div class="saved-card-info">
+              <div style="font-size: 0.75rem; font-weight: bold; opacity: 0.85;">${card.cardType}</div>
+              <div class="saved-card-number">•••• •••• •••• ${card.last4}</div>
+              <div class="saved-card-meta">
+                <span>Hold: ${card.cardholderName}</span>
+                <span>Exp: ${card.expiry}</span>
+              </div>
+            </div>
+            <button class="card-trash-btn" onclick="deleteCard(${card.id})" title="Remove Card">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        `;
+      });
+      cardsListContainer.innerHTML = html;
+    }
+
+    // Delete Payment Card
+    async function deleteCard(cardId) {
+      if (!confirm('Are you sure you want to remove this payment method?')) return;
+      try {
+        const response = await fetch('/api/users/payment-methods/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: cardId, phone: activeUserPhone })
+        });
+
+        if (response.ok) {
+          refreshUserData();
+        } else {
+          const err = await response.json();
+          alert('Failed to delete card: ' + err.error);
+        }
+      } catch (err) {
+        console.error('Error deleting card:', err);
+        alert('Network error deleting card.');
+      }
+    }
+
+    // ==========================================================================
+    // Visual Card Form Formatting & Mock logic
+    // ==========================================================================
+    const cardHolderInput = document.getElementById('card-holder');
+    const cardNumberInput = document.getElementById('card-number');
+    const cardExpiryInput = document.getElementById('card-expiry');
+    const cardCvvInput = document.getElementById('card-cvv');
+    const paymentForm = document.getElementById('payment-card-form');
+
+    const mockNumber = document.getElementById('mock-card-number');
+    const mockName = document.getElementById('mock-card-name');
+    const mockExpiry = document.getElementById('mock-card-expiry');
+    const mockBg = document.getElementById('mock-card-bg');
+
+    // Live update mockup fields
+    cardHolderInput.addEventListener('input', (e) => {
+      mockName.textContent = e.target.value.toUpperCase() || 'YOUR NAME';
+    });
+
+    cardNumberInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      
+      // Auto-format spacing: 0000 0000 0000 0000
+      let formatted = '';
+      for (let i = 0; i < val.length; i++) {
+        if (i > 0 && i % 4 === 0) formatted += ' ';
+        formatted += val[i];
+      }
+      e.target.value = formatted;
+
+      // Update mock visual
+      mockNumber.textContent = formatted || '•••• •••• •••• ••••';
+
+      // Detect card type (e.g. Visa starts with 4, Mastercard with 5)
+      if (val.startsWith('4')) {
+        mockBg.style.background = 'linear-gradient(135deg, var(--color-blue-500), var(--color-blue-700))'; // Visa Blue
+      } else if (val.startsWith('5')) {
+        mockBg.style.background = 'linear-gradient(135deg, #e65100, var(--color-navy-900))'; // Mastercard Orange
+      } else if (val.startsWith('3')) {
+        mockBg.style.background = 'linear-gradient(135deg, #006064, var(--color-navy-900))'; // AMEX Teal
+      } else {
+        mockBg.style.background = 'linear-gradient(135deg, var(--color-blue-500), var(--color-blue-700))';
+      }
+    });
+
+    cardExpiryInput.addEventListener('input', (e) => {
+      let val = e.target.value.replace(/\D/g, '');
+      if (val.length > 2) {
+        val = val.substring(0, 2) + '/' + val.substring(2, 4);
+      }
+      e.target.value = val;
+      mockExpiry.textContent = val || 'MM/YY';
+    });
+
+    // Handle saving card
+    paymentForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const holder = cardHolderInput.value.trim();
+      const num = cardNumberInput.value.replace(/\s/g, '');
+      const expiry = cardExpiryInput.value;
+      
+      if (num.length < 13) {
+        alert('Please enter a valid card number.');
+        return;
+      }
+
+      // Determine card brand
+      let cardType = 'Card';
+      if (num.startsWith('4')) cardType = 'Visa';
+      else if (num.startsWith('5')) cardType = 'Mastercard';
+      else if (num.startsWith('3')) cardType = 'American Express';
+
+      const last4 = num.substring(num.length - 4);
+
+      try {
+        const response = await fetch('/api/users/payment-methods', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: activeUserPhone,
+            cardType,
+            last4,
+            cardholderName: holder,
+            expiry
+          })
+        });
+
+        if (response.ok) {
+          // Reset card form and visual mockup
+          paymentForm.reset();
+          mockName.textContent = 'YOUR NAME';
+          mockNumber.textContent = '•••• •••• •••• ••••';
+          mockExpiry.textContent = 'MM/YY';
+          mockBg.style.background = 'linear-gradient(135deg, var(--color-blue-500), var(--color-blue-700))';
+
+          // Refresh payment list
+          refreshUserData();
+        } else {
+          const err = await response.json();
+          alert('Failed to save card: ' + err.error);
+        }
+      } catch (err) {
+        console.error('Error saving payment method:', err);
+        alert('Network error saving payment method.');
+      }
+    });
+  </script>
+</body>
+</html>

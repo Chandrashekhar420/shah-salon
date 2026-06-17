@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queue Administration | Shah's Salon</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Admin Login Overlay -->
+  <div id="login-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--color-navy-900); z-index: 1000; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="card" style="width: 100%; max-width: 400px; border-color: var(--color-blue-500); box-shadow: var(--shadow-glow);">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="brand-logo" style="margin: 0 auto 1rem; width: 50px; height: 50px; font-size: 1.8rem; background-color: var(--color-electric); color: var(--color-navy-900);">S</div>
+        <h1 style="font-size: 1.75rem; color: var(--color-navy-900); margin-bottom: 0.5rem;">Admin Access</h1>
+        <p style="color: var(--color-blue-600); font-size: 0.9rem; font-weight: 500;">Enter the administrator password to manage the queue.</p>
+      </div>
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label for="admin-password" class="form-label">Password</label>
+          <input type="password" id="admin-password" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Unlock Console</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- App Header (Hidden until authenticated) -->
+  <div id="admin-app" style="display: none;">
+    <header class="app-header">
+      <a href="index.html" class="brand" id="brand-link">
+        <div class="brand-logo">S</div>
+        <div class="brand-name">Shah's<span> Salon</span></div>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html" class="nav-link" id="nav-book">Book</a>
+        <a href="tv.html" class="nav-link" id="nav-tv">TV Board</a>
+        <a href="admin.html" class="nav-link active" id="nav-admin">Admin</a>
+        <a href="#" class="nav-link" id="btn-admin-logout">Logout</a>
+      </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container">
+      <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 style="font-size: 2.25rem; margin-bottom: 0.25rem;">Queue Control Panel</h1>
+          <p style="color: var(--color-blue-600); font-weight: 500;">Manage bookings, check-in clients, and broadcast announcements to the TV screen.</p>
+        </div>
+      </div>
+
+      <!-- Admin Layout Grid -->
+      <div class="admin-grid">
+        <!-- Sidebar Stats -->
+        <aside class="admin-sidebar">
+          <!-- Waiting Stat -->
+          <div class="stat-card">
+            <span class="stat-label">Clients Waiting</span>
+            <span class="stat-value" id="stat-waiting">0</span>
+          </div>
+          <!-- Serving Stat -->
+          <div class="stat-card">
+            <span class="stat-label">Currently Serving</span>
+            <span class="stat-value" id="stat-serving">0</span>
+          </div>
+          <!-- Completed Stat -->
+          <div class="stat-card">
+            <span class="stat-label">Completed Today</span>
+            <span class="stat-value" id="stat-completed">0</span>
+          </div>
+        </aside>
+
+        <!-- Queue Board -->
+        <section class="queue-container">
+          <div class="queue-header">
+            <h2 class="queue-title">Active Booking Queue</h2>
+            <span class="queue-count" id="queue-count">0 Bookings</span>
+          </div>
+
+          <div class="queue-list" id="queue-list">
+            <!-- Queue Items will be dynamically injected here -->
+            <div class="empty-queue">
+              <h3 class="empty-queue-title">No bookings for today</h3>
+              <p>New appointments will show up here in real-time as clients book them.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let bookings = [];
+    let ws;
+
+    const loginOverlay = document.getElementById('login-overlay');
+    const adminApp = document.getElementById('admin-app');
+    const loginForm = document.getElementById('admin-login-form');
+    const passwordInput = document.getElementById('admin-password');
+    const btnLogout = document.getElementById('btn-admin-logout');
+
+    // Check Authentication state
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (token) {
+        loginOverlay.style.display = 'none';
+        adminApp.style.display = 'block';
+        if (!ws) {
+          connectWebSocket();
+        }
+      } else {
+        loginOverlay.style.display = 'flex';
+        adminApp.style.display = 'none';
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+      }
+    }
+
+    // Handle Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = passwordInput.value;
+
+      try {
+        const response = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem('admin_token', data.token);
+          passwordInput.value = '';
+          checkAuth();
+        } else {
+          alert('Incorrect password. Please try again.');
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('Network error during authentication.');
+      }
+    });
+
+    // Handle Logout
+    btnLogout.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('admin_token');
+      checkAuth();
+    });
+
+    // Connect WebSocket to stay in sync
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message.type === 'SYNC_BOOKINGS' || message.type === 'UPDATE_BOOKINGS') {
+          bookings = message.data;
+          renderQueue();
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected. Reconnecting in 5s...');
+        if (localStorage.getItem('admin_token')) {
+          setTimeout(connectWebSocket, 5000);
+        }
+      };
+    }
+
+    // Render Queue Items and update statistics
+    function renderQueue() {
+      const queueList = document.getElementById('queue-list');
+      const countEl = document.getElementById('queue-count');
+      
+      const todayStr = new Date().toISOString().split('T')[0];
+      
+      // Filter for today's bookings
+      const todayBookings = bookings.filter(b => b.date === todayStr);
+
+      // Sort: 'serving' first, then 'waiting' sorted by time, then completed/cancelled sorted by time
+      todayBookings.sort((a, b) => {
+        const rank = { 'serving': 1, 'waiting': 2, 'completed': 3, 'cancelled': 4 };
+        if (rank[a.status] !== rank[b.status]) {
+          return rank[a.status] - rank[b.status];
+        }
+        return a.time.localeCompare(b.time);
+      });
+
+      // Update Counts
+      const waiting = todayBookings.filter(b => b.status === 'waiting').length;
+      const serving = todayBookings.filter(b => b.status === 'serving').length;
+      const completed = todayBookings.filter(b => b.status === 'completed').length;
+
+      document.getElementById('stat-waiting').textContent = waiting;
+      document.getElementById('stat-serving').textContent = serving;
+      document.getElementById('stat-completed').textContent = completed;
+      countEl.textContent = `${todayBookings.length} ${todayBookings.length === 1 ? 'Booking' : 'Bookings'}`;
+
+      if (todayBookings.length === 0) {
+        queueList.innerHTML = `
+          <div class="empty-queue">
+            <h3 class="empty-queue-title">No bookings for today</h3>
+            <p>New appointments will show up here in real-time as clients book them.</p>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      todayBookings.forEach(booking => {
+        const isWaiting = booking.status === 'waiting';
+        const isServing = booking.status === 'serving';
+        
+        let statusBadge = `<span class="badge badge-waiting">Waiting</span>`;
+        if (isServing) statusBadge = `<span class="badge badge-serving">Serving</span>`;
+        if (booking.status === 'completed') statusBadge = `<span class="badge badge-completed">Completed</span>`;
+        if (booking.status === 'cancelled') statusBadge = `<span class="badge badge-cancelled">Cancelled</span>`;
+
+        const itemClass = isServing ? 'queue-item serving' : 'queue-item';
+
+        const timeParts = booking.time.split(' ');
+        const hour = timeParts[0];
+        const ampm = timeParts[1];
+
+        // Action buttons based on status
+        let actionsHtml = '';
+        if (isWaiting) {
+          actionsHtml = `
+            <button class="btn btn-secondary btn-sm" onclick="updateStatus('${booking.id}', 'serving')">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              Serve
+            </button>
+            <button class="btn btn-danger-outline btn-sm" onclick="updateStatus('${booking.id}', 'cancelled')">Cancel</button>
+          `;
+        } else if (isServing) {
+          actionsHtml = `
+            <button class="btn btn-primary btn-sm" style="background-color: var(--color-electric); color: var(--color-navy-900);" onclick="callClient('${booking.id}')">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+              Call TV
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="updateStatus('${booking.id}', 'completed')">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Complete
+            </button>
+            <button class="btn btn-danger-outline btn-sm" onclick="updateStatus('${booking.id}', 'cancelled')">Cancel</button>
+          `;
+        }
+
+        html += `
+          <div class="${itemClass}">
+            <div class="queue-time-block">
+              <div class="queue-time-hour">${hour}</div>
+              <div class="queue-time-date">${ampm}</div>
+            </div>
+            
+            <div class="queue-info-block">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="queue-client-name">${booking.name}</div>
+                ${statusBadge}
+              </div>
+              <div class="queue-meta">
+                <span class="queue-meta-item">Service: <strong>${booking.service}</strong></span>
+                <span class="queue-meta-item">Barber: <strong>${booking.barber}</strong></span>
+                <span class="queue-meta-item">Phone: <strong>${booking.phone}</strong></span>
+              </div>
+            </div>
+
+            <div class="queue-actions">
+              ${actionsHtml}
+            </div>
+          </div>
+        `;
+      });
+
+      queueList.innerHTML = html;
+    }
+
+    // Call REST endpoint to update status (requires Auth Token)
+    async function updateStatus(id, status) {
+      const token = localStorage.getItem('admin_token');
+      try {
+        const response = await fetch(`/api/bookings/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        if (response.status === 401) {
+          alert('Session expired. Please log in.');
+          localStorage.removeItem('admin_token');
+          checkAuth();
+        } else if (!response.ok) {
+          const data = await response.json();
+          alert('Error: ' + data.error);
+        }
+      } catch (e) {
+        console.error('Failed to update booking:', e);
+        alert('Network error updating booking');
+      }
+    }
+
+    // Call REST endpoint to trigger TV announcement flash (requires Auth Token)
+    async function callClient(id) {
+      const token = localStorage.getItem('admin_token');
+      try {
+        const response = await fetch(`/api/bookings/${id}/call`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.status === 401) {
+          alert('Session expired. Please log in.');
+          localStorage.removeItem('admin_token');
+          checkAuth();
+        } else if (!response.ok) {
+          const data = await response.json();
+          alert('Error: ' + data.error);
+        }
+      } catch (e) {
+        console.error('Failed to call client:', e);
+        alert('Network error broadcasting call');
+      }
+    }
+
+    // Initialize check
+    checkAuth();
+  </script>
+</body>
+</html>
